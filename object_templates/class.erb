@@ -3,12 +3,16 @@
 #
 # @summary This profile manages <%= app_name %> with Tiny Puppet (tp)
 #
-# @example Include in role classes
+# @example Include in other classes
 #   include <%= name %>
 # 
+# @example Include in PSICK via hiera (yaml)
+#   profiles:
+#     - <%= name %>
+# 
 # @example Manage extra configs via hiera (yaml)
-#   <%= name %>::ensure: present
-#   <%= name %>::conf_hash:
+#   <%= name %>::tp::ensure: present
+#   <%= name %>::tp::conf_hash:
 #     <%= app_name %>.conf:
 #       epp: profile/<%= app_name %>/<%= app_name %>.conf.epp
 #     dot.conf:
@@ -33,12 +37,12 @@
 # @param <%= param[:name] %> <%= param[:description] %>.
 <%-   end -%>
 <%- end -%>
-class <%= name %> (
+class <%= name %>::tp (
   Enum['present','absent'] $ensure       = 'present',
   Hash                     $conf_hash    = {},
   Hash                     $dir_hash     = {},
-  Hash                     $options_hash = {},
-  Boolean                  $auto_prereq  = true,  
+  Hash                     $options_hash = {}
+  Boolean                  $auto_prereq  = true,
   <%- if params -%>
 <%-   params.each do |param| -%>
   <%= param[:type].ljust(max_type_length) %> $<%= param[:name] %>,
@@ -54,7 +58,7 @@ class <%= name %> (
     auto_prerequisites => $auto_prereq,
   }
   ::tp::install { '<%= app_name %>':
-    * => $install_defaults + $install_hash,
+    * => $install_defaults,
   }
 
   # tp::conf iterated over $conf_hash
@@ -69,13 +73,12 @@ class <%= name %> (
   }
 
   # tp::dir iterated over $dir_hash
-  $conf_defaults = {
+  $dir_defaults = {
     ensure             => $ensure,
-    options_hash       => $options_hash,
   }
   $dir_hash.each | $k,$v | {
     ::tp::dir { "<%= app_name %>::${k}":
-      * => $v,
+      * => $dir_defaults + $v,
     }
   }
 
