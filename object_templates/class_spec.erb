@@ -1,4 +1,4 @@
-<% app_name = name.gsub('tp::', '') -%>
+<% app_name = name.gsub('profile::', '').gsub('::tp', '') -%>
 <% class_name = 'profile::' + app_name + '::tp' -%>
 require 'spec_helper'
 
