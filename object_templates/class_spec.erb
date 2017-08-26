@@ -44,12 +44,11 @@ describe '<%= name %>' do
           },
           'url' => 'http://sample/'
         }
-        let(:params) { 'conf_hash' => sample_conf_hash , 'options_hash' => sample_options_hash }
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params) }
+        let(:params) { { 'conf_hash' => sample_conf_hash, 'options_hash' => sample_options_hash } }
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }        
         it { is_expected.to contain_tp__conf('<%= app_name %>::main').with('ensure' => 'present', 'template' => 'profile/spec/sample.erb', 'options_hash' => sample_options_hash) }
         it { is_expected.to contain_tp__conf('<%= app_name %>::other').with('ensure' => 'present', 'source' => 'puppet:///profile/spec/sample') }
       end
     end
   end
 end
-
