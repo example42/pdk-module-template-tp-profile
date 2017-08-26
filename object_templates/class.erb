@@ -1,22 +1,82 @@
+<% app_name = name.gsub("profile::", "") -%>
 # <%= name %>
 #
-# A description of what this class does
+# @summary This profile manages <%= app_name %> with Tiny Puppet (tp)
 #
-# @summary A short summary of the purpose of this class
-#
-# @example
+# @example Include in role classes
 #   include <%= name %>
-<%- if params -%>
+# 
+# @example Manage extra configs via hiera (yaml)
+#   <%= name %>::ensure: present
+#   <%= name %>::conf_hash:
+#     <%= app_name %>.conf:
+#       epp: profile/<%= app_name %>/<%= app_name %>.conf.epp
+#     dot.conf:
+#       epp: profile/<%= app_name %>/dot.conf.epp
+#       base_dir: conf
 #
+# @param ensure If to install or remove <%= app_name %>
+# @param conf_hash An hash to be passed to tp::conf to create configuration
+#   files for <%= app_name %>. Check tp::conf parameters for available values.
+# @param dir_hash An hash to be passed to tp::dir to create directories
+#   for <%= app_name %>. Check tp::dir parameters for available values.
+#   Hash looked up in deep merge mode.
+# @param options_hash An open hash of options to use in the templates referenced
+#   in the $conf_hash. This is passed as parameter to all the tp::conf defines.
+#   Note, if an options_hash is set also in the $conf_hash that gets precedence.
+#   It's looked up via a deep merge hash
+# @param auto_prereq If to automatically install eventual dependencies for <%= app_name %>.
+#   Set to false if you have problems with duplicated resources, being sure that you 
+#   manage the prerequistes to install <%= app_name %> (other packages, repos or tp installs).
+<%- if params -%>
 <%-   params.each do |param| -%>
-# @param <%= param[:name] %> A description of this parameter.
+# @param <%= param[:name] %> <%= param[:description] %>.
 <%-   end -%>
-class <%= name %>(
+<%- end -%>
+class <%= name %> (
+  Enum['present','absent'] $ensure       = 'present',
+  Hash                     $conf_hash    = {},
+  Hash                     $dir_hash     = {},
+  Hash                     $options_hash = {},
+  Boolean                  $auto_prereq  = true,  
+  <%- if params -%>
 <%-   params.each do |param| -%>
   <%= param[:type].ljust(max_type_length) %> $<%= param[:name] %>,
 <%-   end -%>
-) {
-<%- else -%>
-class <%= name %> {
 <%- end -%>
+) {
+
+  # tp::install <%= app_name %>
+  $install_defaults = {
+    ensure             => $ensure,
+    options_hash       => $options_hash,
+    auto_repo          => $auto_prereq,
+    auto_prerequisites => $auto_prereq,
+  }
+  ::tp::install { '<%= app_name %>':
+    * => $install_defaults + $install_hash,
+  }
+
+  # tp::conf iterated over $conf_hash
+  $conf_defaults = {
+    ensure             => $ensure,
+    options_hash       => $options_hash,
+  }
+  $conf_hash.each | $k,$v | {
+    ::tp::conf { "<%= app_name %>::${k}":
+      * => $conf_defaults + $v,
+    }
+  }
+
+  # tp::dir iterated over $dir_hash
+  $conf_defaults = {
+    ensure             => $ensure,
+    options_hash       => $options_hash,
+  }
+  $dir_hash.each | $k,$v | {
+    ::tp::dir { "<%= app_name %>::${k}":
+      * => $v,
+    }
+  }
+
 }
