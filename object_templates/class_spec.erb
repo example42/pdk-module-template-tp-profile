@@ -10,7 +10,7 @@ describe '<%= name %>' do
         'ensure'             => 'present',
         'options_hash'       => {},
         'auto_repo'          => true,
-        'auto_prerequisites' => true,
+        'auto_prerequisites' => true
       }
 
       describe 'with default params' do
@@ -20,21 +20,21 @@ describe '<%= name %>' do
 
       describe 'with ensure => absent' do
         let(:params) { { 'ensure' => 'absent' } }
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('ensure'=>'absent')) }
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('ensure' => 'absent')) }
       end
 
       describe 'with auto_prereq => false' do
         let(:params) { { 'auto_prereq' => false } }
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('auto_repo'=>false,'auto_prerequisites'=>false)) }
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('auto_repo' => false, 'auto_prerequisites' => false)) }
       end
 
       describe 'with custom conf_hash' do
         sample_conf_hash = {
           'main' => {
-            'template' => 'profile/<%= app_name %>/conf.erb'
+            'template' => 'profile/spec/sample.erb'
           },
           'other' => {
-            'source' => 'puppet:///profile/<%= app_name %>/other'
+            'source' => 'puppet:///profile/spec/sample'
           }
         }
         sample_options_hash = {
@@ -44,10 +44,10 @@ describe '<%= name %>' do
           },
           'url' => 'http://sample/'
         }
-        let(:params) { 'conf_hash'=>sample_conf_hash, 'options_hash' => sample_options_hash }
+        let(:params) { 'conf_hash' => sample_conf_hash , 'options_hash' => sample_options_hash }
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params) }
-        it { is_expected.to contain_tp__conf('<%= app_name %>::main').with('ensure'=>'present','template'=>'profile/<%= app_name %>/conf.epp','options_hash'=>sample_options_hash) }
-        it { is_expected.to contain_tp__conf('<%= app_name %>::other').with('ensure'=>'present','source'=>'puppet:///profile/<%= app_name %>/other') }
+        it { is_expected.to contain_tp__conf('<%= app_name %>::main').with('ensure' => 'present', 'template' => 'profile/spec/sample.erb', 'options_hash' => sample_options_hash) }
+        it { is_expected.to contain_tp__conf('<%= app_name %>::other').with('ensure' => 'present', 'source' => 'puppet:///profile/spec/sample') }
       end
     end
   end
