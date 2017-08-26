@@ -1,8 +1,7 @@
 <% app_name = name.gsub('profile::', '').gsub('::tp', '') -%>
-<% class_name = 'profile::' + app_name + '::tp' -%>
 require 'spec_helper'
 
-describe '<%= class_name %>' do
+describe '<%= name %>' do
   on_supported_os(facterversion: '2.4').each do |os, os_facts|
     context "on #{os}" do
       let(:facts) { os_facts }

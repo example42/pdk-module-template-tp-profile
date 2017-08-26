@@ -1,19 +1,18 @@
 <% app_name = name.gsub('profile::', '').gsub('::tp', '') -%>
-<% class_name = 'profile::' + app_name + '::tp' -%>
-# <%= class_name %>
+# <%= name %>
 #
 # @summary This profile manages <%= app_name %> with Tiny Puppet (tp)
 #
 # @example Include in other classes
-#   include <%= class_name %>
+#   include <%= name %>
 # 
 # @example Include in PSICK via hiera (yaml)
 #   profiles:
-#     - <%= class_name %>
+#     - <%= name %>
 # 
 # @example Manage extra configs via hiera (yaml)
-#   <%= class_name %>::ensure: present
-#   <%= class_name %>::conf_hash:
+#   <%= name %>::ensure: present
+#   <%= name %>::conf_hash:
 #     <%= app_name %>.conf:
 #       epp: profile/<%= app_name %>/<%= app_name %>.conf.epp
 #     dot.conf:
@@ -38,7 +37,7 @@
 # @param <%= param[:name] %> <%= param[:description] %>.
 <%-   end -%>
 <%- end -%>
-class <%= class_name %> (
+class <%= name %> (
   Enum['present','absent'] $ensure       = 'present',
   Hash                     $conf_hash    = {},
   Hash                     $dir_hash     = {},
