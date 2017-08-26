@@ -6,7 +6,7 @@ describe '<%= name %>' do
     context "on #{os}" do
       let(:facts) { os_facts }
 
-      default_tp_install_params = {
+      default_params = {
         'ensure'             => 'present',
         'options_hash'       => {},
         'auto_repo'          => true,
@@ -15,42 +15,42 @@ describe '<%= name %>' do
 
       context 'with default params' do
         it { is_expected.to compile }
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_tp_install_params) }
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params) }
       end
 
       context 'with ensure => absent' do
         let(:params) { { 'ensure' => 'absent' } }
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_tp_install_params.merge({ 'ensure' => 'absent' })) }
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('ensure'=>'absent')) }
       end
 
       context 'with auto_prereq => false' do
         let(:params) { { 'auto_prereq' => false } }
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_tp_install_params.merge({ 'auto_repo' => false, 'auto_prerequisites' => false })) }
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('auto_repo'=>false,'auto_prerequisites'=>false)) }
       end
 
       context 'with custom conf_hash' do
         sample_conf_hash = {
           'main' => {
-            'epp' => 'profile/<%= app_name %>/conf.epp',
+            'template' => 'profile/<%= app_name %>/conf.erb'
           },
           'other' => {
-            'source' => 'puppet:///profile/<%= app_name %>/other',
-          },
+            'source' => 'puppet:///profile/<%= app_name %>/other'
+          }
         }
         sample_options_hash = {
           'server' => {
             'host' => 'localhost',
-            'port' => '1',
+            'port' => '1'
           },
-          'url' => 'http://sample/',
+          'url' => 'http://sample/'
         }
-        let(:params) { {
+        let(:params) do
           'conf_hash'    => sample_conf_hash,
           'options_hash' => sample_options_hash,
-        } }
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_tp_install_params) }
-        it { is_expected.to contain_tp__conf('<%= app_name %>::main').with({ 'ensure' => 'present', 'epp' => 'profile/<%= app_name %>/conf.epp', 'options_hash' => sample_options_hash}) }
-        it { is_expected.to contain_tp__conf('<%= app_name %>::other').with({ 'ensure' => 'present', 'source' => 'puppet:///profile/<%= app_name %>/other'}) }
+        end
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params) }
+        it { is_expected.to contain_tp__conf('<%= app_name %>::main').with('ensure'=>'present','template'=>'profile/<%= app_name %>/conf.epp','options_hash'=>sample_options_hash) }
+        it { is_expected.to contain_tp__conf('<%= app_name %>::other').with('ensure'=>'present','source'=>'puppet:///profile/<%= app_name %>/other') }
       end
     end
   end

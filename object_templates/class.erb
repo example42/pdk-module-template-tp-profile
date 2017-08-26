@@ -41,7 +41,7 @@ class <%= name %> (
   Enum['present','absent'] $ensure       = 'present',
   Hash                     $conf_hash    = {},
   Hash                     $dir_hash     = {},
-  Hash                     $options_hash = {}
+  Hash                     $options_hash = {},
   Boolean                  $auto_prereq  = true,
   <%- if params -%>
 <%-   params.each do |param| -%>
