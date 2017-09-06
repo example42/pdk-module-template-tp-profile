@@ -9,6 +9,7 @@ describe '<%= name %>' do
       default_params = {
         'ensure'             => 'present',
         'options_hash'       => {},
+        'settings_hash'      => {},
         'auto_repo'          => true,
         'auto_prerequisites' => true,
       }
@@ -52,6 +53,55 @@ describe '<%= name %>' do
         it { is_expected.to contain_tp__conf('<%= app_name %>::main').with('ensure' => 'present', 'template' => 'profile/spec/sample.erb', 'options_hash' => sample_options_hash) }
         it { is_expected.to contain_tp__conf('<%= app_name %>::other').with('ensure' => 'present', 'source' => 'puppet:///profile/spec/sample') }
       end
+
+      describe 'with custom dir_hash' do
+        sample_dir_hash = {
+          'psick' => {
+            'source'  => 'git@github.com:/example42.com/psick',
+            'vcsrepo' => 'git',
+            'path'    => '/opt/psick',
+          },
+          'sample' => {
+            'source' => 'puppet:///profile/spec',
+          },
+        }
+        let(:params) { { 'dir_hash' => sample_dir_hash } }
+
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
+        it { is_expected.to contain_tp__dir('<%= app_name %>::psick').with('ensure' => 'present', 'path' => '/opt/psick', 'vcsrepo' => 'git', 'source' => 'git@github.com:/example42.com/psick') }
+        it { is_expected.to contain_tp__dir('<%= app_name %>::sample').with('ensure' => 'present', 'source' => 'puppet:///profile/spec') }
+      end
+
+      describe 'with custom settings_hash' do
+        sample_settings_hash = {
+          'package_name'     => 'my_<%= app_name %>',
+          'service_name'     => 'my_<%= app_name %>',
+          'config_dir_path'  => '/etc/my_<%= app_name %>',
+          'config_file_path' => '/etc/my_<%= app_name %>/config.yaml',
+        },
+        sample_dir_hash = {
+          '' => {
+            'source' => 'puppet:///profile/spec/sample',
+          },
+        }
+        sample_conf_hash = {
+          '' => {
+            'source' => 'puppet:///profile/spec',
+          },
+        }
+        let(:params) do {
+          'settings_hash' => sample_settings_hash,
+          'dir_hash'      => sample_dir_hash,
+          'conf_hash'     => sample_conf_hash, 
+        } end
+
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
+        it { is_expected.to contain_tp__conf('<%= app_name %>').with('ensure' => 'present', 'source' => 'puppet:///profile/spec/sample') }
+        it { is_expected.to contain_tp__dir('<%= app_name %>').with('ensure' => 'present', 'source' => 'puppet:///profile/spec') }
+        it { is_expected.to contain_package('my_<%= app_name %>').with('ensure' => 'present',)
+        it { is_expected.to contain_service('my_<%= app_name %>').with('ensure' => 'present',)
+        it { is_expected.to contain_file('/etc/my_<%= app_name %>/config.yaml').with('ensure' => 'present',)
+        it { is_expected.to contain_file('/etc/my_<%= app_name %>').with('ensure' => 'directory',)
     end
   end
 end

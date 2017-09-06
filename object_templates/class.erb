@@ -29,6 +29,9 @@
 #   in the $conf_hash. This is passed as parameter to all the tp::conf defines.
 #   Note, if an options_hash is set also in the $conf_hash that gets precedence.
 #   It's looked up via a deep merge hash
+# @param settings_hash An hash of tp settings to customise <%= app_name %> file
+#   paths, package names, repo info and whatever can match Tp::Settings data type:
+#   https://github.com/example42/puppet-tp/blob/master/types/settings.pp
 # @param auto_prereq If to automatically install eventual dependencies for <%= app_name %>.
 #   Set to false if you have problems with duplicated resources, being sure that you 
 #   manage the prerequistes to install <%= app_name %> (other packages, repos or tp installs).
@@ -38,11 +41,12 @@
 <%-   end -%>
 <%- end -%>
 class <%= name %> (
-  Enum['present','absent'] $ensure       = 'present',
-  Hash                     $conf_hash    = {},
-  Hash                     $dir_hash     = {},
-  Hash                     $options_hash = {},
-  Boolean                  $auto_prereq  = true,
+  Enum['present','absent'] $ensure        = 'present',
+  Hash                     $conf_hash     = {},
+  Hash                     $dir_hash      = {},
+  Hash                     $options_hash  = {},
+  Hash                     $settings_hash = {},
+  Boolean                  $auto_prereq   = true,
   <%- if params -%>
 <%-   params.each do |param| -%>
   <%= param[:type].ljust(max_type_length) %> $<%= param[:name] %>,
@@ -54,6 +58,7 @@ class <%= name %> (
   $install_defaults = {
     ensure             => $ensure,
     options_hash       => $options_hash,
+    settings_hash      => $settings_hash,
     auto_repo          => $auto_prereq,
     auto_prerequisites => $auto_prereq,
   }
@@ -65,6 +70,7 @@ class <%= name %> (
   $conf_defaults = {
     ensure             => $ensure,
     options_hash       => $options_hash,
+    settings_hash      => $settings_hash,
   }
   $conf_hash.each | $k,$v | {
     ::tp::conf { "<%= app_name %>::${k}":
@@ -73,11 +79,16 @@ class <%= name %> (
   }
 
   # tp::dir iterated over $dir_hash
+  $dir_ensure = $ensure ? {
+    'absent' => 'absent',
+    default  => 'directory',
+  }
   $dir_defaults = {
-    ensure             => $ensure,
+    ensure             => $dir_ensure,
+    settings_hash      => $settings_hash,
   }
   $dir_hash.each | $k,$v | {
-    ::tp::dir { "<%= app_name %>::${k}":
+    ::tp::dir: { "<%= app_name %>::${k}":
       * => $dir_defaults + $v,
     }
   }
