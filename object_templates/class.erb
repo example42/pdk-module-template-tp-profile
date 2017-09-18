@@ -1,14 +1,14 @@
 <% app_name = name.gsub('profile::', '').gsub('::tp', '') -%>
 # <%= name %>
 #
-# @summary This profile manages <%= app_name %> with Tiny Puppet (tp)
+# @summary This psick profile manages <%= app_name %> with Tiny Puppet (tp)
 #
-# @example Include in other classes
+# @example Include it to install <%= app_name %>
 #   include <%= name %>
 # 
 # @example Include in PSICK via hiera (yaml)
-#   profiles:
-#     - <%= name %>
+#   psick::profiles:
+#     <%= app_name %>: <%= name %>
 # 
 # @example Manage extra configs via hiera (yaml)
 #   <%= name %>::ensure: present
@@ -41,12 +41,14 @@
 <%-   end -%>
 <%- end -%>
 class <%= name %> (
+  Boolean                  $manage        = $::psick::manage,
   Enum['present','absent'] $ensure        = 'present',
   Hash                     $conf_hash     = {},
   Hash                     $dir_hash      = {},
   Hash                     $options_hash  = {},
   Hash                     $settings_hash = {},
-  Boolean                  $auto_prereq   = true,
+  Boolean                  $auto_prereq   = $::psick::auto_prereq,
+  Boolean                  $auto_conf     = $::psick::auto_conf,
   <%- if params -%>
 <%-   params.each do |param| -%>
   <%= param[:type].ljust(max_type_length) %> $<%= param[:name] %>,
@@ -54,43 +56,46 @@ class <%= name %> (
 <%- end -%>
 ) {
 
-  # tp::install <%= app_name %>
-  $install_defaults = {
-    ensure             => $ensure,
-    options_hash       => $options_hash,
-    settings_hash      => $settings_hash,
-    auto_repo          => $auto_prereq,
-    auto_prerequisites => $auto_prereq,
-  }
-  ::tp::install { '<%= app_name %>':
-    * => $install_defaults,
-  }
-
-  # tp::conf iterated over $conf_hash
-  $conf_defaults = {
-    ensure             => $ensure,
-    options_hash       => $options_hash,
-    settings_hash      => $settings_hash,
-  }
-  $conf_hash.each | $k,$v | {
-    ::tp::conf { "<%= app_name %>::${k}":
-      * => $conf_defaults + $v,
+  if $manage {
+    # tp::install <%= app_name %>
+    $install_defaults = {
+      ensure             => $ensure,
+      options_hash       => $options_hash,
+      settings_hash      => $settings_hash,
+      auto_repo          => $auto_prereq,
+      auto_conf          => $auto_conf,
+      auto_prerequisites => $auto_prereq,
+    }
+    ::tp::install { '<%= app_name %>':
+      * => $install_defaults,
+    }
+  
+    # tp::conf iterated over $conf_hash
+    $conf_defaults = {
+      ensure             => $ensure,
+      options_hash       => $options_hash,
+      settings_hash      => $settings_hash,
+    }
+    $conf_hash.each | $k,$v | {
+      ::tp::conf { $k:
+        * => $conf_defaults + $v,
+      }
+    }
+  
+    # tp::dir iterated over $dir_hash
+    $dir_ensure = $ensure ? {
+      'absent' => 'absent',
+      default  => 'directory',
+    }
+    $dir_defaults = {
+      ensure             => $dir_ensure,
+      settings_hash      => $settings_hash,
+    }
+    $dir_hash.each | $k,$v | {
+      ::tp::dir: { $k:
+        * => $dir_defaults + $v,
+      }
     }
   }
-
-  # tp::dir iterated over $dir_hash
-  $dir_ensure = $ensure ? {
-    'absent' => 'absent',
-    default  => 'directory',
-  }
-  $dir_defaults = {
-    ensure             => $dir_ensure,
-    settings_hash      => $settings_hash,
-  }
-  $dir_hash.each | $k,$v | {
-    ::tp::dir: { "<%= app_name %>::${k}":
-      * => $dir_defaults + $v,
-    }
-  }
-
 }
+
