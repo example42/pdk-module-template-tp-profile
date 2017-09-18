@@ -1,4 +1,4 @@
-<% app_name = name.gsub('profile::', '').gsub('::tp', '') -%>
+<% app_name = name.gsub('psick::', '').gsub('::tp', '') -%>
 # <%= name %>
 #
 # @summary This psick profile manages <%= app_name %> with Tiny Puppet (tp)
@@ -19,6 +19,7 @@
 #       epp: profile/<%= app_name %>/dot.conf.epp
 #       base_dir: conf
 #
+# @param manage If to actually manage any resource or not
 # @param ensure If to install or remove <%= app_name %>
 # @param conf_hash An hash to be passed to tp::conf to create configuration
 #   files for <%= app_name %>. Check tp::conf parameters for available values.
@@ -35,6 +36,7 @@
 # @param auto_prereq If to automatically install eventual dependencies for <%= app_name %>.
 #   Set to false if you have problems with duplicated resources, being sure that you 
 #   manage the prerequistes to install <%= app_name %> (other packages, repos or tp installs).
+# @param auto_conf If to automatically use default configurations for <%= app_name %>.
 <%- if params -%>
 <%-   params.each do |param| -%>
 # @param <%= param[:name] %> <%= param[:description] %>.
