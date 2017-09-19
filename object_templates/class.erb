@@ -12,12 +12,18 @@
 # 
 # @example Manage extra configs via hiera (yaml)
 #   <%= name %>::ensure: present
-#   <%= name %>::conf_hash:
-#     <%= app_name %>.conf:
-#       epp: profile/<%= app_name %>/<%= app_name %>.conf.epp
-#     dot.conf:
-#       epp: profile/<%= app_name %>/dot.conf.epp
-#       base_dir: conf
+#   <%= name %>::tp_hash:
+#     tp::conf:
+#       <%= app_name %>.conf:
+#         epp: profile/<%= app_name %>/<%= app_name %>.conf.epp
+#       dot.conf:
+#         epp: profile/<%= app_name %>/dot.conf.epp
+#         base_dir: conf
+#
+# @example Enable auto configuration, if configurations are available
+#   for the underlying system, they are automatically added (Default value is
+#   inherited from global $::psick::auto_conf
+#   <%= name %>::auto_conf: true
 #
 # @param manage If to actually manage any resource or not
 # @param ensure If to install or remove <%= app_name %>
@@ -104,7 +110,7 @@ class <%= name %> (
     }
     # All the tp::dir defines declared here
     $tp_dirs.each | $k,$v | {
-      ::tp::dir: { $k:
+      ::tp::dir { $k:
         * => $dir_defaults + $v,
       }
     }
