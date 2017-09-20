@@ -85,7 +85,8 @@ class <%= name %> (
       options_hash       => $all_options_hash,
       settings_hash      => $settings_hash,
     }
-    $tp_confs = lookup("<%= app_name %>::resources_hash_${auto_conf}", Hash, 'deep', {}) + pick($resources_hash['tp::conf'], {}) 
+    $resources_auto_conf = lookup("<%= app_name %>::resources_hash_${auto_conf}", Hash, 'deep', {})
+    $tp_confs = pick($resources_auto_conf['tp::conf'], {}) + pick($resources_hash['tp::conf'], {}) 
     # All the tp::conf defines declared here
     $tp_confs.each | $k,$v | {
       ::tp::conf { $k:
@@ -102,11 +103,8 @@ class <%= name %> (
       ensure             => $dir_ensure,
       settings_hash      => $settings_hash,
     }
-    $tp_dirs = $auto_conf ? {
-      true  => pick($auto_conf_hash['tp::dir'], {}) + pick($resources_hash['tp::dir'], {}),
-      false => pick($resources_hash['tp::dir'], {}),
-    }
     # All the tp::dir defines declared here
+    $tp_dirs = pick($resources_auto_dir['tp::dir'], {}) + pick($resources_hash['tp::dir'], {}) 
     $tp_dirs.each | $k,$v | {
       ::tp::dir { $k:
         * => $dir_defaults + $v,
