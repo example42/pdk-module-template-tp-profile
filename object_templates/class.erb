@@ -12,7 +12,7 @@
 # 
 # @example Manage extra configs via hiera (yaml)
 #   <%= name %>::ensure: present
-#   <%= name %>::tp_hash:
+#   <%= name %>::resources_hash:
 #     tp::conf:
 #       <%= app_name %>.conf:
 #         epp: profile/<%= app_name %>/<%= app_name %>.conf.epp
@@ -20,14 +20,14 @@
 #         epp: profile/<%= app_name %>/dot.conf.epp
 #         base_dir: conf
 #
-# @example Enable auto configuration, if configurations are available
-#   for the underlying system, they are automatically added (Default value is
-#   inherited from global $::psick::auto_conf
-#   <%= name %>::auto_conf: true
+# @example Enable default auto configuration, if configurations are available
+#   for the underlying system and the given auto_conf value, they are
+#   automatically added (Default value is inherited from global $::psick::auto_conf
+#   <%= name %>::auto_conf: 'default'
 #
 # @param manage If to actually manage any resource or not
 # @param ensure If to install or remove <%= app_name %>
-# @param tp_hash An hash of tp conf and dir resources for <%= app_name %>.
+# @param resources_hash An hash of tp conf and dir resources for <%= app_name %>.
 #   tp::conf params: https://github.com/example42/puppet-tp/blob/master/manifests/conf.pp
 #   tp::dir params: https://github.com/example42/puppet-tp/blob/master/manifests/dir.pp
 # @param options_hash An open hash of options to use in the templates referenced
@@ -41,22 +41,19 @@
 #   Set to false if you have problems with duplicated resources, being sure that you 
 #   manage the prerequistes to install <%= app_name %> (other packages, repos or tp installs).
 # @param auto_conf If to automatically use default configurations for <%= app_name %>.
-# @param auto_conf_defaults If auto_conf is this, this Hash contains the tp resources to
-#   apply. This can be different according to the underlying OS.
 <%- if params -%>
 <%-   params.each do |param| -%>
 # @param <%= param[:name] %> <%= param[:description] %>.
 <%-   end -%>
 <%- end -%>
 class <%= name %> (
-  Boolean       $manage         = $::psick::manage,
-  Psick::Ensure $ensure         = 'present',
-  Hash          $tp_hash        = {},
-  Hash          $options_hash   = {},
-  Hash          $settings_hash  = {},
-  Boolean       $auto_prereq    = $::psick::auto_prereq,
-  Boolean       $auto_conf      = $::psick::auto_conf,
-  Hash          $auto_conf_hash = {},
+  Boolean         $manage         = $::psick::manage,
+  Psick::Ensure   $ensure         = 'present',
+  Hash            $resources_hash = {},
+  Hash            $options_hash   = {},
+  Hash            $settings_hash  = {},
+  Boolean         $auto_prereq    = $::psick::auto_prereq,
+  Psick::Autoconf $auto_conf      = $::psick::auto_conf,
   <%- if params -%>
 <%-   params.each do |param| -%>
   <%= param[:type].ljust(max_type_length) %> $<%= param[:name] %>,
@@ -71,23 +68,24 @@ class <%= name %> (
       options_hash       => $options_hash,
       settings_hash      => $settings_hash,
       auto_repo          => $auto_prereq,
-      auto_conf          => $auto_conf,
       auto_prerequisites => $auto_prereq,
     }
     ::tp::install { '<%= app_name %>':
       * => $install_defaults,
     }
   
-    # tp::conf
+    # tp::conf iteration based on 
+    $file_ensure = $ensure ? {
+      'absent' => 'absent',
+      default  => 'present',
+    }
+    $all_options_hash = lookup("<%= app_name %>::options_hash_${auto_conf}", Hash, 'deep', {}) + $options_hash 
     $conf_defaults = {
-      ensure             => $ensure,
-      options_hash       => $options_hash,
+      ensure             => $file_ensure,
+      options_hash       => $all_options_hash,
       settings_hash      => $settings_hash,
     }
-    $tp_confs = $auto_conf ? {
-      true  => pick($auto_conf_hash['tp::conf'], {}) + pick($tp_hash['tp::conf'], {}),
-      false => pick($tp_hash['tp::conf'], {}),
-    }
+    $tp_confs = lookup("<%= app_name %>::resources_hash_${auto_conf}", Hash, 'deep', {}) + pick($resources_hash['tp::conf'], {}) 
     # All the tp::conf defines declared here
     $tp_confs.each | $k,$v | {
       ::tp::conf { $k:
@@ -105,8 +103,8 @@ class <%= name %> (
       settings_hash      => $settings_hash,
     }
     $tp_dirs = $auto_conf ? {
-      true  => pick($auto_conf_hash['tp::dir'], {}) + pick($tp_hash['tp::dir'], {}),
-      false => pick($tp_hash['tp::dir'], {}),
+      true  => pick($auto_conf_hash['tp::dir'], {}) + pick($resources_hash['tp::dir'], {}),
+      false => pick($resources_hash['tp::dir'], {}),
     }
     # All the tp::dir defines declared here
     $tp_dirs.each | $k,$v | {
