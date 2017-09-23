@@ -50,12 +50,13 @@ describe '<%= name %>' do
             '<%= app_name %>::other' => {
               'source' => 'puppet:///psick/spec/sample',
             },
+          },
           'tp::dir' => {
             'psick' => {
               'source'  => 'git@github.com:/example42.com/psick',
               'vcsrepo' => 'git',
               'path'    => '/opt/psick',
-          },
+            },
             '<%= app_name %>::sample' => {
               'source' => 'puppet:///psick/spec',
             },
