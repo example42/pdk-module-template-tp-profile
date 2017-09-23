@@ -14,13 +14,19 @@ describe '<%= name %>' do
         'ensure'             => 'present',
         'options_hash'       => {},
         'settings_hash'      => {},
-        'auto_repo'          => true,
-        'auto_prerequisites' => true,
+        'auto_repo'          => 'none',
+        'auto_prereq'        => true,
       }
 
       describe 'with default params' do
         it { is_expected.to compile }
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params) }
+      end
+
+      describe 'with manage => false' do
+        let(:params) { { 'manage' => false } }
+
+        it { is_expected.to have_resource_count(2) }
       end
 
       describe 'with ensure => absent' do
@@ -36,13 +42,24 @@ describe '<%= name %>' do
       end
 
       describe 'with custom conf_hash' do
-        sample_conf_hash = {
-          'main' => {
-            'template' => 'psick/spec/sample.erb',
+        sample_resources_hash = {
+          'tp::conf' => {
+            '<%= app_name %>' => {
+              'template' => 'psick/spec/sample.erb',
+            },
+            '<%= app_name %>::other' => {
+              'source' => 'puppet:///psick/spec/sample',
+            },
+          'tp::dir' => {
+            'psick' => {
+              'source'  => 'git@github.com:/example42.com/psick',
+              'vcsrepo' => 'git',
+              'path'    => '/opt/psick',
           },
-          'other' => {
-            'source' => 'puppet:///psick/spec/sample',
-          },
+            '<%= app_name %>::sample' => {
+              'source' => 'puppet:///psick/spec',
+            },
+          }
         }
         sample_options_hash = {
           'server' => {
@@ -51,27 +68,11 @@ describe '<%= name %>' do
           },
           'url' => 'http://sample/',
         }
-        let(:params) { { 'conf_hash' => sample_conf_hash, 'options_hash' => sample_options_hash } }
+        let(:params) { { 'resources_hash' => sample_resources_hash, 'options_hash' => sample_options_hash } }
 
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
         it { is_expected.to contain_tp__conf('<%= app_name %>::main').with('ensure' => 'present', 'template' => 'psick/spec/sample.erb', 'options_hash' => sample_options_hash) }
         it { is_expected.to contain_tp__conf('<%= app_name %>::other').with('ensure' => 'present', 'source' => 'puppet:///psick/spec/sample') }
-      end
-
-      describe 'with custom dir_hash' do
-        sample_dir_hash = {
-          'psick' => {
-            'source'  => 'git@github.com:/example42.com/psick',
-            'vcsrepo' => 'git',
-            'path'    => '/opt/psick',
-          },
-          'sample' => {
-            'source' => 'puppet:///psick/spec',
-          },
-        }
-        let(:params) { { 'dir_hash' => sample_dir_hash } }
-
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
         it { is_expected.to contain_tp__dir('<%= app_name %>::psick').with('ensure' => 'present', 'path' => '/opt/psick', 'vcsrepo' => 'git', 'source' => 'git@github.com:/example42.com/psick') }
         it { is_expected.to contain_tp__dir('<%= app_name %>::sample').with('ensure' => 'present', 'source' => 'puppet:///psick/spec') }
       end
@@ -83,20 +84,21 @@ describe '<%= name %>' do
           'config_dir_path'  => '/etc/my_<%= app_name %>',
           'config_file_path' => '/etc/my_<%= app_name %>/config.yaml',
         },
-        sample_dir_hash = {
-          '' => {
-            'source' => 'puppet:///psick/spec/sample',
+        sample_resources_hash = {
+          'tp::conf' => {
+            '<%= app_name %>::other' => {
+              'source' => 'puppet:///psick/spec/sample',
+            },
           },
-        }
-        sample_conf_hash = {
-          '' => {
-            'source' => 'puppet:///psick/spec',
-          },
+          'tp::dir' => {
+            '<%= app_name %>::sample' => {
+              'source' => 'puppet:///psick/spec/sample',
+            },
+          }
         }
         let(:params) do {
-          'settings_hash' => sample_settings_hash,
-          'dir_hash'      => sample_dir_hash,
-          'conf_hash'     => sample_conf_hash, 
+          'settings_hash'  => sample_settings_hash,
+          'resources_hash' => sample_resources_hash,
         } end
 
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
