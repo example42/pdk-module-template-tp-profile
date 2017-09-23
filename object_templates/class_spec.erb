@@ -1,4 +1,4 @@
-<% app_name = name.gsub('profile::', '').gsub('::tp', '') -%>
+<% app_name = name.gsub('psick::', '').gsub('::tp', '') -%>
 require 'spec_helper'
 
 describe '<%= name %>' do
@@ -34,10 +34,10 @@ describe '<%= name %>' do
       describe 'with custom conf_hash' do
         sample_conf_hash = {
           'main' => {
-            'template' => 'profile/spec/sample.erb',
+            'template' => 'psick/spec/sample.erb',
           },
           'other' => {
-            'source' => 'puppet:///profile/spec/sample',
+            'source' => 'puppet:///psick/spec/sample',
           },
         }
         sample_options_hash = {
@@ -50,8 +50,8 @@ describe '<%= name %>' do
         let(:params) { { 'conf_hash' => sample_conf_hash, 'options_hash' => sample_options_hash } }
 
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
-        it { is_expected.to contain_tp__conf('<%= app_name %>::main').with('ensure' => 'present', 'template' => 'profile/spec/sample.erb', 'options_hash' => sample_options_hash) }
-        it { is_expected.to contain_tp__conf('<%= app_name %>::other').with('ensure' => 'present', 'source' => 'puppet:///profile/spec/sample') }
+        it { is_expected.to contain_tp__conf('<%= app_name %>::main').with('ensure' => 'present', 'template' => 'psick/spec/sample.erb', 'options_hash' => sample_options_hash) }
+        it { is_expected.to contain_tp__conf('<%= app_name %>::other').with('ensure' => 'present', 'source' => 'puppet:///psick/spec/sample') }
       end
 
       describe 'with custom dir_hash' do
@@ -62,14 +62,14 @@ describe '<%= name %>' do
             'path'    => '/opt/psick',
           },
           'sample' => {
-            'source' => 'puppet:///profile/spec',
+            'source' => 'puppet:///psick/spec',
           },
         }
         let(:params) { { 'dir_hash' => sample_dir_hash } }
 
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
         it { is_expected.to contain_tp__dir('<%= app_name %>::psick').with('ensure' => 'present', 'path' => '/opt/psick', 'vcsrepo' => 'git', 'source' => 'git@github.com:/example42.com/psick') }
-        it { is_expected.to contain_tp__dir('<%= app_name %>::sample').with('ensure' => 'present', 'source' => 'puppet:///profile/spec') }
+        it { is_expected.to contain_tp__dir('<%= app_name %>::sample').with('ensure' => 'present', 'source' => 'puppet:///psick/spec') }
       end
 
       describe 'with custom settings_hash' do
@@ -81,12 +81,12 @@ describe '<%= name %>' do
         },
         sample_dir_hash = {
           '' => {
-            'source' => 'puppet:///profile/spec/sample',
+            'source' => 'puppet:///psick/spec/sample',
           },
         }
         sample_conf_hash = {
           '' => {
-            'source' => 'puppet:///profile/spec',
+            'source' => 'puppet:///psick/spec',
           },
         }
         let(:params) do {
@@ -96,12 +96,13 @@ describe '<%= name %>' do
         } end
 
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
-        it { is_expected.to contain_tp__conf('<%= app_name %>').with('ensure' => 'present', 'source' => 'puppet:///profile/spec/sample') }
-        it { is_expected.to contain_tp__dir('<%= app_name %>').with('ensure' => 'present', 'source' => 'puppet:///profile/spec') }
-        it { is_expected.to contain_package('my_<%= app_name %>').with('ensure' => 'present',)
-        it { is_expected.to contain_service('my_<%= app_name %>').with('ensure' => 'present',)
-        it { is_expected.to contain_file('/etc/my_<%= app_name %>/config.yaml').with('ensure' => 'present',)
-        it { is_expected.to contain_file('/etc/my_<%= app_name %>').with('ensure' => 'directory',)
+        it { is_expected.to contain_tp__conf('<%= app_name %>').with('ensure' => 'present', 'source' => 'puppet:///psick/spec/sample') }
+        it { is_expected.to contain_tp__dir('<%= app_name %>').with('ensure' => 'present', 'source' => 'puppet:///psick/spec') }
+        it { is_expected.to contain_package('my_<%= app_name %>').with('ensure' => 'present') }
+        it { is_expected.to contain_service('my_<%= app_name %>').with('ensure' => 'present') }
+        it { is_expected.to contain_file('/etc/my_<%= app_name %>/config.yaml').with('ensure' => 'present') }
+        it { is_expected.to contain_file('/etc/my_<%= app_name %>').with('ensure' => 'directory') }
+      end
     end
   end
 end
