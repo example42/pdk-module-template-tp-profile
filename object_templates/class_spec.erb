@@ -4,19 +4,51 @@ require 'yaml'
 facts_yaml = File.dirname(__FILE__) + '/../../fixtures/facts/spec.yaml'
 facts = YAML.load_file(facts_yaml)
 
+default_params = {
+  'ensure'             => 'present',
+  'options_hash'       => {},
+  'settings_hash'      => {},
+  'auto_repo'          => 'none',
+  'auto_prereq'        => true
+}
+sample_settings_hash = {
+  'package_name'     => 'my_<%= app_name %>',
+  'service_name'     => 'my_<%= app_name %>',
+  'config_dir_path'  => '/etc/my_<%= app_name %>',
+  'config_file_path' => '/etc/my_<%= app_name %>/config.yaml'
+}
+sample_resources_hash = {
+  'tp::conf' => {
+    '<%= app_name %>' => {
+      'template' => 'psick/spec/sample.erb',
+    },
+    '<%= app_name %>::other' => {
+      'source' => 'puppet:///psick/spec/sample',
+    },
+  },
+  'tp::dir' => {
+    'psick' => {
+      'source'  => 'git@github.com:/example42.com/psick',
+      'vcsrepo' => 'git',
+      'path'    => '/opt/psick',
+    },
+    '<%= app_name %>::sample' => {
+      'source' => 'puppet:///psick/spec',
+    }
+  }
+}
+sample_options_hash = {
+  'server' => {
+  'host'   => 'localhost',
+  'port'   => '1',
+  'url'    => 'http://sample/',
+}
+
 describe '<%= name %>' do
   on_supported_os(facterversion: '2.4').select { |k, _v| k == 'redhat-7-x86_64' || k == 'ubuntu-16.04-x86_64' }.each do |os, os_facts|
     context "on #{os}" do
       let(:facts) { os_facts.merge(facts) }
       let(:pre_condition) { 'include psick' }
-
-      default_params = {
-        'ensure'             => 'present',
-        'options_hash'       => {},
-        'settings_hash'      => {},
-        'auto_repo'          => 'none',
-        'auto_prereq'        => true,
-      }
 
       describe 'with default params' do
         it { is_expected.to compile }
@@ -42,33 +74,6 @@ describe '<%= name %>' do
       end
 
       describe 'with custom conf_hash' do
-        sample_resources_hash = {
-          'tp::conf' => {
-            '<%= app_name %>' => {
-              'template' => 'psick/spec/sample.erb',
-            },
-            '<%= app_name %>::other' => {
-              'source' => 'puppet:///psick/spec/sample',
-            },
-          },
-          'tp::dir' => {
-            'psick' => {
-              'source'  => 'git@github.com:/example42.com/psick',
-              'vcsrepo' => 'git',
-              'path'    => '/opt/psick',
-            },
-            '<%= app_name %>::sample' => {
-              'source' => 'puppet:///psick/spec',
-            },
-          }
-        }
-        sample_options_hash = {
-          'server' => {
-            'host' => 'localhost',
-            'port' => '1',
-          },
-          'url' => 'http://sample/',
-        }
         let(:params) { { 'resources_hash' => sample_resources_hash, 'options_hash' => sample_options_hash } }
 
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
@@ -79,27 +84,9 @@ describe '<%= name %>' do
       end
 
       describe 'with custom settings_hash' do
-        sample_settings_hash = {
-          'package_name'     => 'my_<%= app_name %>',
-          'service_name'     => 'my_<%= app_name %>',
-          'config_dir_path'  => '/etc/my_<%= app_name %>',
-          'config_file_path' => '/etc/my_<%= app_name %>/config.yaml',
-        },
-        sample_resources_hash = {
-          'tp::conf' => {
-            '<%= app_name %>::other' => {
-              'source' => 'puppet:///psick/spec/sample',
-            },
-          },
-          'tp::dir' => {
-            '<%= app_name %>::sample' => {
-              'source' => 'puppet:///psick/spec/sample',
-            },
-          }
-        }
         let(:params) do {
           'settings_hash'  => sample_settings_hash,
-          'resources_hash' => sample_resources_hash,
+          'resources_hash' => sample_resources_hash
         } end
 
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }

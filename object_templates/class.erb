@@ -94,12 +94,8 @@ class <%= name %> (
     }
   
     # tp::dir iterated over $dir_hash
-    $dir_ensure = $ensure ? {
-      'absent' => 'absent',
-      default  => 'directory',
-    }
     $dir_defaults = {
-      ensure             => $dir_ensure,
+      ensure             => $file_ensure,
       settings_hash      => $settings_hash,
     }
     # All the tp::dir defines declared here
