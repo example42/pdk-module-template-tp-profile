@@ -65,11 +65,11 @@ class <%= name %> (
   if $manage {
     # tp::install <%= app_name %>
     $install_defaults = {
-      ensure             => $ensure,
-      options_hash       => $options_auto_conf_hash + $options_hash,
-      settings_hash      => $settings_hash,
-      auto_repo          => $auto_prereq,
-      auto_prerequisites => $auto_prereq,
+      ensure        => $ensure,
+      options_hash  => $options_auto_conf_hash + $options_hash,
+      settings_hash => $settings_hash,
+      auto_repo     => $auto_prereq,
+      auto_prereq   => $auto_prereq,
     }
     ::tp::install { '<%= app_name %>':
       * => $install_defaults,

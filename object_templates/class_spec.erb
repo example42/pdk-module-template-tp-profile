@@ -67,12 +67,6 @@ describe '<%= name %>' do
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('ensure' => 'absent')) }
       end
 
-      describe 'with auto_prereq => false' do
-        let(:params) { { 'auto_prereq' => false } }
-
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('auto_repo' => false, 'auto_prereq' => false)) }
-      end
-
       describe 'with custom conf_hash' do
         let(:params) { { 'resources_hash' => sample_resources_hash, 'options_hash' => sample_options_hash } }
 
@@ -92,15 +86,22 @@ describe '<%= name %>' do
           }
         end
 
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash, 'settings_hash' => sample_settings_hash)) }
         it { is_expected.to contain_tp__conf('<%= app_name %>').with('ensure' => 'present', 'template' => 'psick/spec/sample.erb') }
         it { is_expected.to contain_tp__conf('<%= app_name %>::other').with('ensure' => 'present', 'source' => 'puppet:///psick/spec/sample') }
-        it { is_expected.to contain_tp__dir('<%= app_name %>').with('ensure' => 'present', 'source' => 'puppet:///psick/spec') }
+        it { is_expected.to contain_tp__dir('<%= app_name %>').with('ensure' => 'present', 'source' => 'git@github.com:/example42.com/psick') }
         it { is_expected.to contain_package('my_<%= app_name %>').with('ensure' => 'present') }
-        it { is_expected.to contain_service('my_<%= app_name %>').with('ensure' => 'present') }
+        it { is_expected.to contain_service('my_<%= app_name %>').with('ensure' => 'running', 'enable' => true) }
         it { is_expected.to contain_file('/etc/my_<%= app_name %>/config.yaml').with('ensure' => 'present') }
         it { is_expected.to contain_file('/etc/my_<%= app_name %>').with('ensure' => 'directory') }
       end
+
+      describe 'with auto_prereq => false' do
+        let(:params) { { 'auto_prereq' => false } }
+
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('auto_repo' => false, 'auto_prereq' => false)) }
+      end
+
     end
   end
 end
