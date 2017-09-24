@@ -8,7 +8,6 @@ default_params = {
   'ensure'             => 'present',
   'options_hash'       => {},
   'settings_hash'      => {},
-  'auto_conf'          => 'none',
   'auto_prereq'        => true,
 }
 sample_settings_hash = {
@@ -35,14 +34,14 @@ sample_resources_hash = {
     '<%= app_name %>::other' => {
       'source' => 'puppet:///psick/spec',
     },
-  }
+  },
 }
 sample_options_hash = {
   'server' => {
-    'host'   => 'localhost',
-    'port'   => '1',
-   },
-  'url'    => 'http://sample/',
+    'host' => 'localhost',
+    'port' => '1',
+  },
+  'url' => 'http://sample/',
 }
 
 describe '<%= name %>' do
@@ -71,7 +70,7 @@ describe '<%= name %>' do
       describe 'with auto_prereq => false' do
         let(:params) { { 'auto_prereq' => false } }
 
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('auto_repo' => false, 'auto_prerequisites' => false)) }
+        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('auto_repo' => false, 'auto_prereq' => false)) }
       end
 
       describe 'with custom conf_hash' do
@@ -85,10 +84,13 @@ describe '<%= name %>' do
       end
 
       describe 'with custom settings_hash' do
-        let(:params) do {
-          'settings_hash' => sample_settings_hash,
-          'resources_hash' => sample_resources_hash,
-        } end
+        let(:params) do
+          {
+            'settings_hash' => sample_settings_hash,
+            'resources_hash' => sample_resources_hash,
+            'options_hash' => sample_options_hash,
+          }
+        end
 
         it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('options_hash' => sample_options_hash)) }
         it { is_expected.to contain_tp__conf('<%= app_name %>').with('ensure' => 'present', 'template' => 'psick/spec/sample.erb') }
