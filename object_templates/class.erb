@@ -7,10 +7,10 @@
 #   include <%= name %>
 # 
 # @example Include in PSICK via hiera (yaml)
-#   psick::profiles:
+#   psick::profiles::linux_classes:
 #     <%= app_name %>: <%= name %>
 # 
-# @example Manage extra configs via hiera (yaml)
+# @example Manage extra configs via hiera (yaml) with templates based on custom options
 #   <%= name %>::ensure: present
 #   <%= name %>::resources_hash:
 #     tp::conf:
@@ -19,28 +19,36 @@
 #       dot.conf:
 #         epp: profile/<%= app_name %>/dot.conf.epp
 #         base_dir: conf
+#   <%= name %>::options_hash:
+#     key: value
 #
 # @example Enable default auto configuration, if configurations are available
 #   for the underlying system and the given auto_conf value, they are
 #   automatically added (Default value is inherited from global $::psick::auto_conf
 #   <%= name %>::auto_conf: 'default'
 #
-# @param manage If to actually manage any resource or not
-# @param ensure If to install or remove <%= app_name %>
-# @param resources_hash An hash of tp conf and dir resources for <%= app_name %>.
+# @param manage If to actually manage any resource in this profile or not
+# @param ensure If to install or remove <%= app_name %>. Valid values are present, absent, latest
+#   or any version string, matching the expected <%= app_name %> package version.
+# @param resources_hash An hash of tp::conf and tp::dir resources for <%= app_name %>.
 #   tp::conf params: https://github.com/example42/puppet-tp/blob/master/manifests/conf.pp
 #   tp::dir params: https://github.com/example42/puppet-tp/blob/master/manifests/dir.pp
+# @param resources_auto_conf_hash The default resources hash if auto_conf is set. Default
+#   value is based on $::psick::auto_conf. Can be overridden or set to an empty hash.
+#   The final resources manages are the ones specified here and in $resources_hash.
+#   Check psick::<%= app_name %>::tp:resources_auto_conf_hash in data/$auto_conf/*.yaml for
+#   the auto_conf defaults.
 # @param options_hash An open hash of options to use in the templates referenced
-#   in the $conf_hash. This is passed as parameter to all the tp::conf defines.
-#   Note, if an options_hash is set also in the $conf_hash that gets precedence.
-#   It's looked up via a deep merge hash
-# @param settings_hash An hash of tp settings to customise <%= app_name %> file
+#   in the tp::conf entries of the $resouces_hash.
+# @param options_auto_conf_hash The default options hash if auto_conf is set.
+#   Check psick::<%= app_name %>::tp:options_auto_conf_hash in data/$auto_conf/*.yaml for
+#   the auto_conf defaults.
+# @param settings_hash An hash of tp settings to override default <%= app_name %> file
 #   paths, package names, repo info and whatever can match Tp::Settings data type:
 #   https://github.com/example42/puppet-tp/blob/master/types/settings.pp
 # @param auto_prereq If to automatically install eventual dependencies for <%= app_name %>.
 #   Set to false if you have problems with duplicated resources, being sure that you 
 #   manage the prerequistes to install <%= app_name %> (other packages, repos or tp installs).
-# @param auto_conf If to automatically use default configurations for <%= app_name %>.
 <%- if params -%>
 <%-   params.each do |param| -%>
 # @param <%= param[:name] %> <%= param[:description] %>.
