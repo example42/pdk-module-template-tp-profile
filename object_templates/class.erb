@@ -27,6 +27,9 @@
 #   automatically added (Default value is inherited from global $::psick::auto_conf
 #   <%= name %>::auto_conf: 'default'
 #
+# @example Set no-noop mode and enforce changes even if noop is set for the agent
+#   <%= name %>::no_noop: true
+#
 # @param manage If to actually manage any resource in this profile or not
 # @param ensure If to install or remove <%= app_name %>. Valid values are present, absent, latest
 #   or any version string, matching the expected <%= app_name %> package version.
@@ -49,6 +52,8 @@
 # @param auto_prereq If to automatically install eventual dependencies for <%= app_name %>.
 #   Set to false if you have problems with duplicated resources, being sure that you
 #   manage the prerequistes to install <%= app_name %> (other packages, repos or tp installs).
+# @param no_noop Set noop metaparameter to false to all the resources of this class.
+#   This overrides any noop setting which might be in place.
 <%- if params -%>
 <%-   params.each do |param| -%>
 # @param <%= param[:name] %> <%= param[:description] %>.
@@ -63,6 +68,7 @@ class <%= name %> (
   Hash            $options_auto_conf_hash   = {},
   Hash            $settings_hash            = {},
   Boolean         $auto_prereq              = $::psick::auto_prereq,
+  Boolean         $no_noop                  = false,
   <%- if params -%>
 <%-   params.each do |param| -%>
   <%= param[:type].ljust(max_type_length) %> $<%= param[:name] %>,
@@ -71,6 +77,11 @@ class <%= name %> (
 ) {
 
   if $manage {
+    if $no_noop {
+      info('Forced no-noop mode in <%= name %>')
+      noop(false)
+    }
+
     $options_all = $options_auto_conf_hash + $options_hash
     $install_defaults = {
       ensure        => $ensure,
