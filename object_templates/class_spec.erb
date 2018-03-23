@@ -112,7 +112,7 @@ describe '<%= name %>' do
       describe 'with no_noop => true and psick::noop_mode => true' do
         let(:params) { { 'no_noop' => true } }
 
-        it { is_expected.to contain_tp__install('<%= app_name %>').with(default_params.merge('noop' => true)) }
+        it { is_expected.to contain_tp__install('<%= app_name %>').without('noop') }
       end
     end
   end
