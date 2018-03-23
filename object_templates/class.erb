@@ -53,7 +53,7 @@
 #   Set to false if you have problems with duplicated resources, being sure that you
 #   manage the prerequistes to install <%= app_name %> (other packages, repos or tp installs).
 # @param no_noop Set noop metaparameter to false to all the resources of this class.
-#   This overrides client any side noop setting but is ignores is $::psick::noop_mode is true.
+#   This overrides client site noop setting but not $psick::noop_mode.
 <%- if params -%>
 <%-   params.each do |param| -%>
 # @param <%= param[:name] %> <%= param[:description] %>.
