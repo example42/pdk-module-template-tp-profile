@@ -77,9 +77,9 @@ class <%= name %> (
 ) {
 
   if $manage {
-    if !$::psick::noop_mode and $no_noop {
+    if $no_noop {
       info('Forced no-noop mode in <%= name %>')
-      noop(false)
+      noop($::psick::noop_mode)
     }
 
     $options_all = $options_auto_conf_hash + $options_hash
