@@ -5,37 +5,84 @@
     '*.erb': 'eol=lf'
     '*.pp': 'eol=lf'
     '*.sh': 'eol=lf'
+.gitignore:
+  required: &ignorepaths
+      - '.git/'
+      - '.*.sw[op]'
+      - '.metadata'
+      - '.yardoc'
+      - '.yardwarns'
+      - '*.iml'
+      - '/.bundle/'
+      - '/.idea/'
+      - '/.vagrant/'
+      - '/coverage/'
+      - '/bin/'
+      - '/doc/'
+      - '/Gemfile.local'
+      - '/Gemfile.lock'
+      - '/junit/'
+      - '/log/'
+      - '/pkg/'
+      - '/spec/fixtures/manifests/'
+      - '/spec/fixtures/modules/'
+      - '/tmp/'
+      - '/vendor/'
+      - '/convert_report.txt'
+      - '/update_report.txt'
+      - '.DS_Store'
+.pdkignore:
+  required: *ignorepaths
 .travis.yml:
+  ruby_versions:
+    - 2.4.4
+  global_env:
+    - BEAKER_PUPPET_COLLECTION=puppet5 PUPPET_GEM_VERSION="~> 5.0"
+  bundler_args: --without system_tests
   docker_sets:
   docker_defaults:
     # values will replace @@SET@@ with the docker_sets' value
-    rvm: 2.3.1
+    rvm: 2.4.4
     sudo: required
     dist: trusty
     services: docker
-    env: PUPPET_INSTALL_TYPE=agent BEAKER_debug=true BEAKER_set=@@SET@@
+    env: PUPPET_INSTALL_TYPE=agent BEAKER_debug=true BEAKER_PUPPET_COLLECTION=puppet5 BEAKER_set=@@SET@@ BEAKER_TESTMODE=@@TESTMODE@@
     script: bundle exec rake beaker
   includes:
-    - rvm: 2.3.1
-      env: PUPPET_GEM_VERSION="~> 4.0"
-      bundler_args: --without system_tests
-    - rvm: 2.1.7
-      env: PUPPET_GEM_VERSION="~> 4.0"
-      bundler_args: --without system_tests
+    - env: CHECK="syntax lint metadata_lint check:symlinks check:git_ignore check:dot_underscore check:test_file rubocop"
+    - env: CHECK=parallel_spec
+    - env: PUPPET_GEM_VERSION="~> 4.0" CHECK=parallel_spec
+      rvm: 2.1.9
+  deploy: true
+  user: 'puppet'
+  branches:
+    - master
+    - /^v\d/
+.yardopts:
+  markup: markdown
 appveyor.yml:
   appveyor_bundle_install: "bundle install --jobs 4 --retry 2 --without system_tests"
   matrix:
-    - PUPPET_GEM_VERSION: "~> 4.0"
+    - RUBY_VERSION: 24-x64
+      CHECK: "syntax lint metadata_lint check:symlinks check:git_ignore check:dot_underscore check:test_file rubocop"
+    - PUPPET_GEM_VERSION: ~> 4.0
+      RUBY_VERSION: 21
+      CHECK: parallel_spec
+    - PUPPET_GEM_VERSION: ~> 4.0
       RUBY_VERSION: 21-x64
-    - PUPPET_GEM_VERSION: "~> 4.0"
-      RUBY_VERSION: 23-x64
+      CHECK: parallel_spec
+    - PUPPET_GEM_VERSION: ~> 5.0
+      RUBY_VERSION: 24
+      CHECK: parallel_spec
+    - PUPPET_GEM_VERSION: ~> 5.0
+      RUBY_VERSION: 24-x64
+      CHECK: parallel_spec
   test_script:
-    - bundle exec rake spec
+    - bundle exec rake %CHECK%
 Rakefile:
   default_disabled_lint_checks:
     - 'relative'
-spec/spec_opts:
-  delete: true
+  extras: []
 .rubocop.yml:
   selected_profile: strict
   default_configs: &default_configs
@@ -97,6 +144,7 @@ spec/spec_opts:
     Style/SymbolArray:
       Description: Using percent style obscures symbolic intent of array's contents.
       EnforcedStyle: brackets
+
   cleanup_cops: &cleanup_cops
     Bundler/OrderedGems:
     Layout/AccessModifierIndentation:
@@ -123,7 +171,6 @@ spec/spec_opts:
     Layout/IndentArray:
     Layout/IndentAssignment:
     Layout/IndentHash:
-    Layout/IndentHeredoc:
     Layout/IndentationConsistency:
     Layout/IndentationWidth:
     Layout/InitialIndentation:
@@ -302,13 +349,14 @@ spec/spec_opts:
     Style/WhileUntilDo:
     Style/WhileUntilModifier:
     Style/WordArray:
+      EnforcedStyle: brackets
     Style/YodaCondition:
     Style/ZeroLengthPredicate:
 
   profiles:
     # no rubocops enabled, caveat emptor!
     off:
-      enabled_cops: []
+      enabled_cops: {}
 
     # a sanitized list of cops that'll cleanup a code base without much effort
     # they all support autocorrect, and should be fairly uncontroversial across
@@ -324,7 +372,6 @@ spec/spec_opts:
         <<: *cleanup_cops
         Bundler/DuplicatedGem:
         Layout/EmptyLinesAroundBeginBody:
-        Layout/EndOfLine:
         Lint/AmbiguousBlockAssociation:
         Lint/AmbiguousOperator:
         Lint/AmbiguousRegexpLiteral:
@@ -392,6 +439,7 @@ spec/spec_opts:
         RSpec/LetSetup:
         RSpec/MessageChain:
         RSpec/MessageSpies:
+          EnforcedStyle: receive
         RSpec/MultipleDescribes:
         RSpec/NamedSubject:
         RSpec/OverwritingSetup:
@@ -412,6 +460,9 @@ spec/spec_opts:
         Style/ClassVars:
         Style/ConstantName:
         Style/Documentation:
+          Exclude:
+          - 'lib/puppet/parser/functions/**/*'
+          - 'spec/**/*'
         Style/DoubleNegation:
         Style/EndBlock:
         Style/FileName:
@@ -463,6 +514,9 @@ Gemfile:
       - gem: json
         version: '= 1.8.1'
         condition: "Gem::Version.new(RUBY_VERSION.dup) == Gem::Version.new('2.1.9')"
+      - gem: json
+        version: '<= 2.0.4'
+        condition: "Gem::Version.new(RUBY_VERSION.dup) == Gem::Version.new('2.4.4')"
       - gem: 'puppet-module-posix-default-r#{minor_version}'
         platforms: ruby
       - gem: 'puppet-module-posix-dev-r#{minor_version}'
@@ -496,3 +550,27 @@ Gemfile:
     #     from_env: BEAKER_HOSTGENERATOR_VERSION
     #   - gem: beaker-rspec
     #     from_env: BEAKER_RSPEC_VERSION
+.gitlab-ci.yml:
+  defaults:
+    cache:
+      paths:
+        - 'vendor/bundle'
+    bundler_args: '--without system_tests --path vendor/bundle --jobs $(nproc)'
+    ruby_versions:
+      '2.1.9':
+        checks:
+          - parallel_spec
+        puppet_version: '~> 4.0'
+      '2.4.4':
+        checks:
+          - 'syntax lint metadata_lint check:symlinks check:git_ignore check:dot_underscore check:test_file rubocop'
+          - parallel_spec
+        puppet_version: '~> 5.5'
+    # beaker: true
+spec/default_facts.yml:
+  concat_basedir: "/tmp"
+  ipaddress: "172.16.254.254"
+  is_pe: false
+  macaddress: "AA:AA:AA:AA:AA:AA"
+spec/spec_helper.rb:
+  strict_level: ":warning"
