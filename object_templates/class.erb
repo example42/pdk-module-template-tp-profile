@@ -1,14 +1,17 @@
-<% app_name = name.gsub('psick::', '').gsub('::tp', '') -%>
+<% app_name = name.gsub('tp_profile::', '') -%>
 # <%= name %>
 #
-# @summary This psick profile manages <%= app_name %> with Tiny Puppet (tp)
+# @summary This tp profile manages <%= app_name %> with Tiny Puppet (tp)
 #
-# @example Include it to install <%= app_name %>
+# @example Just include it to install <%= app_name %>
 #   include <%= name %>
 #
-# @example Include in PSICK via hiera (yaml)
+# @example Include via psick module classification (yaml)
 #   psick::profiles::linux_classes:
 #     <%= app_name %>: <%= name %>
+#
+# @example To upstream repos instead of OS defaults (if tinydata available) as packages source:
+#   <%= name %>::upstream_repo: true
 #
 # @example Manage extra configs via hiera (yaml) with templates based on custom options
 #   <%= name %>::ensure: present
@@ -24,26 +27,27 @@
 #
 # @example Enable default auto configuration, if configurations are available
 #   for the underlying system and the given auto_conf value, they are
-#   automatically added (Default value is inherited from global $::psick::auto_conf
-#   <%= name %>::auto_conf: 'default'
+#   automatically added.
+#   <%= name %>::auto_conf: true
 #
 # @param manage If to actually manage any resource in this profile or not
 # @param ensure If to install or remove <%= app_name %>. Valid values are present, absent, latest
 #   or any version string, matching the expected <%= app_name %> package version.
+# @param upstream_repo If to use <%= app_name %> upstream repos as source for packages
+#   or rely on default packages from the underlying OS
 # @param resources_hash An hash of tp::conf and tp::dir resources for <%= app_name %>.
 #   tp::conf params: https://github.com/example42/puppet-tp/blob/master/manifests/conf.pp
 #   tp::dir params: https://github.com/example42/puppet-tp/blob/master/manifests/dir.pp
-# @param resources_auto_conf_hash The default resources hash if auto_conf is set. Default
-#   value is based on $::psick::auto_conf. Can be overridden or set to an empty hash.
-#   The final resources manages are the ones specified here and in $resources_hash.
-#   Check psick::<%= app_name %>::tp:resources_auto_conf_hash in data/$auto_conf/*.yaml for
+# @param resources_auto_conf_hash The default resources hash if auto_conf is set.
+#   The final resources managed are the ones specified here and in $resources_hash.
+#   Check tp_profile::<%= app_name %>::resources_auto_conf_hash in data/$auto_conf/*.yaml for
 #   the auto_conf defaults.
 # @param install_hash An hash of valid params to pass to tp::install defines. Useful to
 #   manage specific params that are not automatically defined.
 # @param options_hash An open hash of options to use in the templates referenced
 #   in the tp::conf entries of the $resources_hash.
 # @param options_auto_conf_hash The default options hash if auto_conf is set.
-#   Check psick::<%= app_name %>::tp:options_auto_conf_hash in data/$auto_conf/*.yaml for
+#   Check tp_profile::<%= app_name %>::options_auto_conf_hash in data/$auto_conf/*.yaml for
 #   the auto_conf defaults.
 # @param settings_hash An hash of tp settings to override default <%= app_name %> file
 #   paths, package names, repo info and whatever can match Tp::Settings data type:
@@ -51,23 +55,24 @@
 # @param auto_prereq If to automatically install eventual dependencies for <%= app_name %>.
 #   Set to false if you have problems with duplicated resources, being sure that you
 #   manage the prerequistes to install <%= app_name %> (other packages, repos or tp installs).
-# @param no_noop Set noop metaparameter to false to all the resources of this class.
-#   This overrides client site noop setting but not $psick::noop_mode.
+# @param no_noop Set noop metaparameter to false to all the resources of this class. If set,
+#   the trlinkin/noop module is required.
 <%- if params -%>
 <%-   params.each do |param| -%>
 # @param <%= param[:name] %> <%= param[:description] %>.
 <%-   end -%>
 <%- end -%>
 class <%= name %> (
-  Psick::Ensure   $ensure                   = 'present',
-  Boolean         $manage                   = $::psick::manage,
+  Tp_Profile::Ensure $ensure                = 'present',
+  Boolean         $manage                   = true,
   Hash            $resources_hash           = {},
   Hash            $resources_auto_conf_hash = {},
   Hash            $install_hash             = {},
   Hash            $options_hash             = {},
   Hash            $options_auto_conf_hash   = {},
   Hash            $settings_hash            = {},
-  Boolean         $auto_prereq              = $::psick::auto_prereq,
+  Optional[Boolean] $upstream_repo          = undef,
+  Boolean         $auto_prereq              = true,
   Boolean         $no_noop                  = false,
   <%- if params -%>
 <%-   params.each do |param| -%>
@@ -77,7 +82,7 @@ class <%= name %> (
 ) {
 
   if $manage {
-    if !$::psick::noop_mode and $no_noop {
+    if $no_noop {
       info('Forced no-noop mode in <%= name %>')
       noop(false)
     }
@@ -88,6 +93,7 @@ class <%= name %> (
       settings_hash => $settings_hash,
       auto_repo     => $auto_prereq,
       auto_prereq   => $auto_prereq,
+      upstream_repo => $upstream_repo,
     }
     tp::install { '<%= app_name %>':
       * => $install_defaults + $install_hash,
