@@ -55,8 +55,12 @@
 # @param auto_prereq If to automatically install eventual dependencies for <%= app_name %>.
 #   Set to false if you have problems with duplicated resources, being sure that you
 #   manage the prerequistes to install <%= app_name %> (other packages, repos or tp installs).
-# @param no_noop Set noop metaparameter to false to all the resources of this class. If set,
-#   the trlinkin/noop module is required.
+# @param noop_manage If to manage noop mode via the noop() function for the resources of
+#   this class. This must be true for noop_value to have effect.
+# @param noop_value. The parameter passed to the noop() function (from trlinkin-noop module)
+#   When true, noop in enforced on all the class' resources.
+#   When false, no-noop in enforced on all the class' resources and overrides any other noop
+#   setting (also from clients' puppet.conf
 <%- if params -%>
 <%-   params.each do |param| -%>
 # @param <%= param[:name] %> <%= param[:description] %>.
@@ -73,7 +77,8 @@ class <%= name %> (
   Hash            $settings_hash            = {},
   Optional[Boolean] $upstream_repo          = undef,
   Boolean         $auto_prereq              = true,
-  Boolean         $no_noop                  = false,
+  Boolean         $noop_manage              = false,
+  Boolean         $noop_value               = false,
   <%- if params -%>
 <%-   params.each do |param| -%>
   <%= param[:type].ljust(max_type_length) %> $<%= param[:name] %>,
@@ -82,9 +87,8 @@ class <%= name %> (
 ) {
 
   if $manage {
-    if $no_noop {
-      info('Forced no-noop mode in <%= name %>')
-      noop(false)
+    if $noop_manage {
+      noop($noop_value)
     }
     $options_all = $options_auto_conf_hash + $options_hash
     $install_defaults = {
